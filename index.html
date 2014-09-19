@@ -6,6 +6,11 @@
   <style>
     .is-target { border-color: #08f }
     .is-dragging { border-color: black; opacity: .5 }
+    .Box:before {
+      content: attr(data-index);
+      font-size: 3rem;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -14,48 +19,63 @@
     <h1>Drop</h1>
   </header>
 
-  <div class="p2 clearfix">
-    <div class="py1 px2"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
+  <!--
+  <div id="boxes" class="p2 clearfix">
+    <div class="py1 px2"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 0</h2> </div> </div>
 
-    <div class="col col-6 py1"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
-    <div class="col col-6 py1"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
+    <div class="col col-6 py1"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 1</h2> </div> </div>
+    <div class="col col-6 py1"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 2</h2> </div> </div>
 
-    <div class="col col-4 py1"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
-    <div class="col col-4 py1"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
-    <div class="col col-4 py1"> <div class="center p4 bg-light-gray border" data-drop> <h2>Box</h2> </div> </div>
+    <div class="col col-4 py1"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 3</h2> </div> </div>
+    <div class="col col-4 py1"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 4</h2> </div> </div>
+    <div class="col col-4 py1"> <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 5</h2> </div> </div>
+  </div>
+  -->
 
+  <div id="boxes" class="p2 clearfix">
+    <div class="Box center p1 bg-light-gray border" data-drop> <h2>Box 0</h2> </div>
+
+    <div class="Box col col-6 center p1 bg-light-gray border" data-drop> <h2>Box 1</h2> </div>
+    <div class="Box col col-6 center p1 bg-light-gray border" data-drop> <h2>Box 2</h2> </div>
+
+    <div class="Box col col-4 center p1 bg-light-gray border" data-drop> <h2>Box 3</h2> </div>
+    <div class="Box col col-4 center p1 bg-light-gray border" data-drop> <h2>Box 4</h2> </div>
+    <div class="Box col col-4 center p1 bg-light-gray border" data-drop> <h2>Box 5</h2> </div>
+  </div>
+
+  <h1 class="p2">#array</h1>
+  <div class="center p2">
+    <ul id="array"></ul>
   </div>
 
 <script>
 
   console.log('D R O P');
+
   var boxes = document.querySelectorAll('[data-drop]');
   var boxesArray = Array.prototype.slice.call(boxes);
+  var target;
+  var overTarget;
+  var enterTarget;
+  var isDragging;
 
-  var findDrop = function(node) {
-    if (node == document) {
-      return null;
-    } else if (!node.dataset.drop) {
-      return findDrop(node.parentNode);
-    } else {
-      return node;
-    }
-  };
 
   for (var i = 0; i < boxes.length; i++) {
 
     var box = boxes[i];
-    var target;
-    var overTarget;
-    var enterTarget;
-    var isDragging;
 
     box.setAttribute('draggable', true);
     box.dataset.index = i;
     box.dataset.drop = 1;
 
+    addListeners(box);
+
+  }
+
+
+  function addListeners(el) {
     function handleDragStart(e) {
-      isDragging = this;
+      isDragging = this.dataset.index;
       this.classList.add('is-dragging');
     }
     function handleDragOver(e) {
@@ -65,11 +85,12 @@
       return false;
     }
     function handleDragEnter(e) {
-      if (this == isDragging) return false;
+      if (this == boxes[isDragging]) return false;
       this.classList.add('is-target');
       enterTarget = e.target;
     }
     function handleDragLeave(e) {
+      console.log(enterTarget == this, overTarget == this);
       if (enterTarget == this && overTarget == this) {
         this.classList.remove('is-target');
       }
@@ -77,18 +98,56 @@
     function handleDrop(e) {
       target = findDrop(e.target);
       console.log('D R O P', target.dataset.index);
+      var index = eval(target.dataset.index);
       this.classList.remove('is-target');
-      isDragging.classList.remove('is-dragging');
+      console.log(boxes, isDragging);
+      boxes[isDragging].classList.remove('is-dragging');
+
+      boxesArray.splice(isDragging, 1);
+      boxesArray.splice(index, 0, boxes[isDragging]);
+      for (var j = 0; j < boxesArray.length; j++) {
+        console.log(boxesArray[j].dataset.index);
+      }
+      renderArray(boxesArray);
+
       isDragging = null;
     }
 
-    box.addEventListener('dragstart', handleDragStart, false);
-    box.addEventListener('dragenter', handleDragEnter, false);
-    box.addEventListener('dragover', handleDragOver, false);
-    box.addEventListener('dragleave', handleDragLeave, false);
-    box.addEventListener('drop', handleDrop, false);
-
+    el.addEventListener('dragstart', handleDragStart, false);
+    el.addEventListener('dragenter', handleDragEnter, false);
+    el.addEventListener('dragover', handleDragOver, false);
+    el.addEventListener('dragleave', handleDragLeave, false);
+    el.addEventListener('drop', handleDrop, false);
   }
+
+
+  function findDrop(node) {
+    if (node == document) {
+      return null;
+    } else if (!node.dataset.drop) {
+      return findDrop(node.parentNode);
+    } else {
+      return node;
+    }
+  };
+
+
+  function renderArray(arr) {
+    var container = document.querySelector('#array');
+    container.innerHTML = '';
+    var boxesContainer = document.querySelector('#boxes');
+    boxesContainer.innerHTML = '';
+    for (var i = 0; i < arr.length; i++) {
+      //boxesContainer.appendChild(arr[i].cloneNode(true));
+      boxesContainer.appendChild(boxes[i]);
+      var item = document.createElement('li');
+      item.innerHTML = arr[i].textContent + ' [' + arr[i].dataset.index + ']';
+      container.appendChild(item);
+    }
+  }
+
+  renderArray(boxesArray);
+
 
 </script>
 
